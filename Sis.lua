@@ -1,4 +1,4 @@
---== Server Finder GUI ==--
+--== Server Finder GUI with PS Detection ==--
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -22,7 +22,7 @@ title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Text = "Server Finder - Block Spin"
 title.TextScaled = true
 
--- Scrolling Frame for server list
+-- Scrolling Frame
 local scroll = Instance.new("ScrollingFrame", frame)
 scroll.Size = UDim2.new(1, -20, 1, -60)
 scroll.Position = UDim2.new(0, 10, 0, 50)
@@ -30,7 +30,6 @@ scroll.CanvasSize = UDim2.new(0,0,0,0)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 8
 
--- UIListLayout
 local layout = Instance.new("UIListLayout", scroll)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Padding = UDim.new(0,5)
@@ -43,14 +42,14 @@ refreshBtn.Text = "Refresh"
 refreshBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
 refreshBtn.TextColor3 = Color3.fromRGB(255,255,255)
 
--- Function to get server list
+-- Get servers
 local function getServers()
     scroll:ClearAllChildren()
     local success, servers = pcall(function()
         local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
         return HttpService:JSONDecode(game:HttpGet(url))
     end)
-    
+
     if success and servers and servers.data then
         local yOffset = 0
         for i, server in ipairs(servers.data) do
@@ -60,14 +59,32 @@ local function getServers()
             btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
             btn.TextColor3 = Color3.fromRGB(255,255,255)
             btn.TextScaled = true
-            local playersCount = server.playing
-            local maxPlayers = server.maxPlayers
-            btn.Text = "Server "..i.." - "..playersCount.."/"..maxPlayers
-            
-            -- Join server on click
+
+            -- Detect number of PS players
+            local psCount = 0
+            if server.playing > 0 and server.platforms then
+                for _, platform in pairs(server.platforms) do
+                    if platform == "Xbox" or platform == "PS4" or platform == "PS5" then
+                        psCount = psCount + 1
+                    end
+                end
+            end
+
+            -- Server label
+            local serverLabel = "Server "..i.." - "..server.playing.."/"..server.maxPlayers
+            if psCount > 0 then
+                serverLabel = serverLabel.." | PS Players: "..psCount
+                btn.BackgroundColor3 = Color3.fromRGB(200,50,50) -- أحمر إذا فيه PS
+            else
+                btn.BackgroundColor3 = Color3.fromRGB(50,200,50) -- أخضر إذا جوال فقط
+            end
+            btn.Text = serverLabel
+
+            -- Join server
             btn.MouseButton1Click:Connect(function()
                 TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer)
             end)
+
             yOffset = yOffset + 55
             scroll.CanvasSize = UDim2.new(0,0,0,yOffset)
         end
@@ -77,6 +94,4 @@ local function getServers()
 end
 
 refreshBtn.MouseButton1Click:Connect(getServers)
-
--- Auto load servers on open
 getServers()
