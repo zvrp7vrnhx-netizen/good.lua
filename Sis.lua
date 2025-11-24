@@ -2,16 +2,25 @@
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
--- Variables
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Variables
 local flying = false
 local speedEnabled = false
 local godMode = false
 
--- Function to create buttons
+-- Speeds
+local normalSpeed = 16
+local fastSpeed = 200 -- زيادة السرعة الخارقة
+
+-- Create Buttons
 local function createButton(text, pos)
     local btn = Instance.new("TextButton", gui)
     btn.Size = UDim2.new(0,150,0,50)
@@ -25,7 +34,6 @@ local function createButton(text, pos)
     return btn
 end
 
--- Buttons
 local godBtn = createButton("God Mode", UDim2.new(0,20,0,100))
 local speedBtn = createButton("Speed", UDim2.new(0,20,0,160))
 local flyBtn = createButton("Fly", UDim2.new(0,20,0,220))
@@ -44,9 +52,8 @@ godBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Prevent health loss
-game:GetService("RunService").Stepped:Connect(function()
-    if godMode then
+RunService.RenderStepped:Connect(function()
+    if godMode and humanoid.Health < humanoid.MaxHealth then
         humanoid.Health = humanoid.MaxHealth
     end
 end)
@@ -54,9 +61,6 @@ end)
 ------------------------------
 -- SPEED --
 ------------------------------
-local normalSpeed = humanoid.WalkSpeed
-local fastSpeed = 100 -- سرعة خارقة
-
 speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
     if speedEnabled then
@@ -74,29 +78,31 @@ end)
 -- FLY --
 ------------------------------
 local bodyVelocity = Instance.new("BodyVelocity")
-bodyVelocity.MaxForce = Vector3.new(400000,400000,400000)
+bodyVelocity.MaxForce = Vector3.new(1e5,1e5,1e5)
 bodyVelocity.Velocity = Vector3.new(0,0,0)
 bodyVelocity.Parent = hrp
 bodyVelocity.Enabled = false
 
+local flyDirection = Vector3.new(0,0,0)
+local flySpeed = 100 -- سرعة الطيران
+
 flyBtn.MouseButton1Click:Connect(function()
     flying = not flying
+    bodyVelocity.Enabled = flying
     if flying then
         flyBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
         flyBtn.Text = "Fly ON"
-        bodyVelocity.Enabled = true
+        humanoid.PlatformStand = true -- منع سقوط الجسم الطبيعي
     else
         flyBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
         flyBtn.Text = "Fly OFF"
-        bodyVelocity.Enabled = false
+        humanoid.PlatformStand = false
+        bodyVelocity.Velocity = Vector3.new(0,0,0)
     end
 end)
 
--- Control fly with WASD
-local uis = game:GetService("UserInputService")
-local flyDirection = Vector3.new(0,0,0)
-
-uis.InputBegan:Connect(function(input)
+-- Control fly with WASD + Space/Shift
+UserInputService.InputBegan:Connect(function(input)
     if flying then
         if input.KeyCode == Enum.KeyCode.W then flyDirection = Vector3.new(0,0,-1) end
         if input.KeyCode == Enum.KeyCode.S then flyDirection = Vector3.new(0,0,1) end
@@ -107,18 +113,19 @@ uis.InputBegan:Connect(function(input)
     end
 end)
 
-uis.InputEnded:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input)
     if flying then
-        if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S or
-           input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.D or
-           input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.LeftShift then
-            flyDirection = Vector3.new(0,0,0)
+        local keys = {Enum.KeyCode.W, Enum.KeyCode.S, Enum.KeyCode.A, Enum.KeyCode.D, Enum.KeyCode.Space, Enum.KeyCode.LeftShift}
+        for _, key in ipairs(keys) do
+            if input.KeyCode == key then
+                flyDirection = Vector3.new(0,0,0)
+            end
         end
     end
 end)
 
 RunService.RenderStepped:Connect(function()
     if flying then
-        bodyVelocity.Velocity = flyDirection * 100 -- سرعة الطيران
+        bodyVelocity.Velocity = flyDirection * flySpeed
     end
 end)
