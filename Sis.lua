@@ -1,10 +1,10 @@
---== MAIN GUI ==--
+--== Simple AimLock Button ==--
+
+-- Create ScreenGui
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
------------------------------------------------------
---== AIM LOCK BUTTON ==--
------------------------------------------------------
+-- Aim Button
 local btn = Instance.new("TextButton", gui)
 btn.Size = UDim2.new(0, 150, 0, 50)
 btn.Position = UDim2.new(0.5, -75, 0.8, 0)
@@ -18,6 +18,7 @@ btn.Draggable = true
 local aimEnabled = false
 local lockedTarget = nil
 
+-- Function to get closest player (only when toggled ON)
 local function getClosest()
     local plr = game.Players.LocalPlayer
     local char = plr.Character
@@ -38,9 +39,11 @@ local function getClosest()
     return target
 end
 
+-- Aim loop (looks at target head)
 task.spawn(function()
     while true do
         task.wait()
+
         if aimEnabled and lockedTarget and lockedTarget:FindFirstChild("Head") then
             local cam = workspace.CurrentCamera
             cam.CFrame = CFrame.new(cam.CFrame.Position, lockedTarget.Head.Position)
@@ -48,6 +51,7 @@ task.spawn(function()
     end
 end)
 
+-- Button toggle
 btn.MouseButton1Click:Connect(function()
     aimEnabled = not aimEnabled
 
@@ -64,77 +68,5 @@ btn.MouseButton1Click:Connect(function()
         lockedTarget = nil
         btn.Text = "Aim OFF"
         btn.BackgroundColor3 = Color3.fromRGB(120,0,0)
-    end
-end)
-
------------------------------------------------------
---== ESP BUTTON ==--
------------------------------------------------------
-local espBtn = Instance.new("TextButton", gui)
-espBtn.Size = UDim2.new(0, 150, 0, 50)
-espBtn.Position = UDim2.new(0.5, -75, 0.7, 0)
-espBtn.Text = "ESP OFF"
-espBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
-espBtn.TextColor3 = Color3.fromRGB(255,255,255)
-espBtn.TextScaled = true
-espBtn.Active = true
-espBtn.Draggable = true
-
-local espEnabled = false
-local espObjects = {}
-
-local function addESP(character)
-    if not character:FindFirstChild("Head") then return end
-
-    local h = Instance.new("Highlight")
-    h.FillColor = Color3.fromRGB(0,255,0)
-    h.FillTransparency = 0.5
-    h.OutlineColor = Color3.fromRGB(0,255,0)
-    h.Parent = character
-
-    espObjects[character] = h
-end
-
-local function removeESP(character)
-    if espObjects[character] then
-        espObjects[character]:Destroy()
-        espObjects[character] = nil
-    end
-end
-
-local function toggleESP(state)
-    espEnabled = state
-
-    for _, p in pairs(game.Players:GetPlayers()) do
-        if p ~= game.Players.LocalPlayer and p.Character then
-            if espEnabled then
-                addESP(p.Character)
-            else
-                removeESP(p.Character)
-            end
-        end
-    end
-end
-
-game.Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function(char)
-        task.wait(1)
-        if espEnabled then
-            addESP(char)
-        end
-    end)
-end)
-
-espBtn.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-
-    if espEnabled then
-        espBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
-        espBtn.Text = "ESP ON"
-        toggleESP(true)
-    else
-        espBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
-        espBtn.Text = "ESP OFF"
-        toggleESP(false)
     end
 end)
