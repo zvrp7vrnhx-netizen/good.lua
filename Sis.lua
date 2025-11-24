@@ -1,50 +1,82 @@
---== Teleport GUI FIXED ==--
+--== Server Finder GUI ==--
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
-local plr = game.Players.LocalPlayer
-local char = plr.Character or plr.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
+-- Main Frame
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 400, 0, 500)
+frame.Position = UDim2.new(0.5, -200, 0.5, -250)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Active = true
+frame.Draggable = true
 
--- زر التلبورت
-local tpBtn = Instance.new("TextButton", gui)
-tpBtn.Size = UDim2.new(0,150,0,50)
-tpBtn.Position = UDim2.new(0.5,-75,0.5,-25)
-tpBtn.Text = "Go to PRESTIGE"
-tpBtn.TextScaled = true
-tpBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-tpBtn.TextColor3 = Color3.fromRGB(255,255,255)
-tpBtn.Active = true
-tpBtn.Draggable = true
+-- Title
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 50)
+title.Position = UDim2.new(0,0,0,0)
+title.BackgroundColor3 = Color3.fromRGB(0,0,0)
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Text = "Server Finder - Block Spin"
+title.TextScaled = true
 
--- وظيفة الزر
-tpBtn.MouseButton1Click:Connect(function()
-    local shop = workspace:FindFirstChild("PRESTIGE")
-    if shop then
-        local targetPart
-        if shop:IsA("BasePart") then
-            targetPart = shop
-        elseif shop:IsA("Model") then
-            -- نستخدم PrimaryPart أو أول Part نجده
-            if shop.PrimaryPart then
-                targetPart = shop.PrimaryPart
-            else
-                for _, v in pairs(shop:GetDescendants()) do
-                    if v:IsA("BasePart") then
-                        targetPart = v
-                        break
-                    end
-                end
-            end
-        end
+-- Scrolling Frame for server list
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Size = UDim2.new(1, -20, 1, -60)
+scroll.Position = UDim2.new(0, 10, 0, 50)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 8
 
-        if targetPart then
-            hrp.CFrame = targetPart.CFrame + Vector3.new(0,5,0) -- فوق المتجر 5 وحدات
-            print("Teleported to PRESTIGE")
-        else
-            warn("⚠ ما لقيت BasePart داخل PRESTIGE")
+-- UIListLayout
+local layout = Instance.new("UIListLayout", scroll)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0,5)
+
+-- Refresh Button
+local refreshBtn = Instance.new("TextButton", frame)
+refreshBtn.Size = UDim2.new(0, 100, 0, 40)
+refreshBtn.Position = UDim2.new(1, -110, 0, 10)
+refreshBtn.Text = "Refresh"
+refreshBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
+refreshBtn.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- Function to get server list
+local function getServers()
+    scroll:ClearAllChildren()
+    local success, servers = pcall(function()
+        local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+        return HttpService:JSONDecode(game:HttpGet(url))
+    end)
+    
+    if success and servers and servers.data then
+        local yOffset = 0
+        for i, server in ipairs(servers.data) do
+            local btn = Instance.new("TextButton", scroll)
+            btn.Size = UDim2.new(1, -10, 0, 50)
+            btn.Position = UDim2.new(0,5,0,yOffset)
+            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
+            btn.TextScaled = true
+            local playersCount = server.playing
+            local maxPlayers = server.maxPlayers
+            btn.Text = "Server "..i.." - "..playersCount.."/"..maxPlayers
+            
+            -- Join server on click
+            btn.MouseButton1Click:Connect(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer)
+            end)
+            yOffset = yOffset + 55
+            scroll.CanvasSize = UDim2.new(0,0,0,yOffset)
         end
     else
-        warn("⚠ ما لقيت PRESTIGE في Workspace")
+        warn("Failed to get server list")
     end
-end)
+end
+
+refreshBtn.MouseButton1Click:Connect(getServers)
+
+-- Auto load servers on open
+getServers()
