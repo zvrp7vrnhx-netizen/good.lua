@@ -1,44 +1,67 @@
---===== SUPER DASH / BOOST =====--
-local UIS = game:GetService("UserInputService")
-local player = game:GetService("Players").LocalPlayer
+--=== Rainbow Hitbox Expander ===--
+
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
--- زر التشغيل
 local btn = Instance.new("TextButton", gui)
-btn.Size = UDim2.new(0, 180, 0, 50)
-btn.Position = UDim2.new(0.5, -90, 0.7, 0)
+btn.Size = UDim2.new(0, 160, 0, 50)
+btn.Position = UDim2.new(0.5, -80, 0.6, 0)
 btn.BackgroundColor3 = Color3.fromRGB(150,0,0)
-btn.Text = "Boost OFF"
-btn.TextColor3 = Color3.fromRGB(255,255,255)
+btn.TextColor3 = Color3.new(1,1,1)
 btn.TextScaled = true
+btn.Text = "Hitbox OFF"
 btn.Active = true
 btn.Draggable = true
 
-local boostEnabled = false
+local enabled = false
+local size = Vector3.new(7,7,7)
+local transparency = 0.6
 
 btn.MouseButton1Click:Connect(function()
-	boostEnabled = not boostEnabled
-	if boostEnabled then
-		btn.Text = "Boost ON"
+	enabled = not enabled
+	if enabled then
+		btn.Text = "Hitbox ON"
 		btn.BackgroundColor3 = Color3.fromRGB(0,150,0)
 	else
-		btn.Text = "Boost OFF"
+		btn.Text = "Hitbox OFF"
 		btn.BackgroundColor3 = Color3.fromRGB(150,0,0)
 	end
 end)
 
--- ====== قوة الدفع ======
-local BOOST_POWER = 80
+-- تابع يعطي ألوان متغيرة (Rainbow)
+local function rainbowColor(tick)
+	local hue = tick % 1
+	return Color3.fromHSV(hue, 1, 1)
+end
 
-UIS.InputBegan:Connect(function(key)
-	if boostEnabled and key.KeyCode == Enum.KeyCode.Space then
-		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local hrp = char.HumanoidRootPart
-			
-			-- دفعة قوية للأعلى + للأمام
-			hrp.Velocity = hrp.CFrame.LookVector * BOOST_POWER + Vector3.new(0, BOOST_POWER * 1.3, 0)
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		if enabled then
+			local color = rainbowColor(tick() % 1)
+			for _, plr in pairs(game.Players:GetPlayers()) do
+				if plr ~= game.Players.LocalPlayer and plr.Character then
+					local head = plr.Character:FindFirstChild("Head")
+					if head then
+						head.Size = size
+						head.Transparency = transparency
+						head.Color = color
+						head.Material = Enum.Material.Neon
+						head.CanCollide = false
+					end
+				end
+			end
+		else
+			for _, plr in pairs(game.Players:GetPlayers()) do
+				if plr ~= game.Players.LocalPlayer and plr.Character then
+					local head = plr.Character:FindFirstChild("Head")
+					if head then
+						head.Size = Vector3.new(2,1,1)
+						head.Transparency = 0
+						head.Material = Enum.Material.SmoothPlastic
+					end
+				end
+			end
 		end
 	end
 end)
