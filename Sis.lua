@@ -1,86 +1,48 @@
---== Block Spin PS Server Finder ==--
+--== High Jump Toggle GUI ==--
 
-local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 420, 0, 520)
-frame.Position = UDim2.new(0.5, -210, 0.5, -260)
-frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
+-- زر القفزة
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0, 180, 0, 50)
+btn.Position = UDim2.new(0.5, -90, 0.7, 0)
+btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.Text = "High Jump OFF"
+btn.TextScaled = true
+btn.Active = true
+btn.Draggable = true
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 45)
-title.BackgroundColor3 = Color3.fromRGB(0,0,0)
-title.TextColor3 = Color3.fromRGB(255,255,255)
-title.Text = "PS Server Finder - Block Spin"
-title.TextScaled = true
+local highJump = false
+local jumpPowerDefault = humanoid.JumpPower
+local highJumpPower = 180 -- تقدر تعدل قوة القفزة
 
-local scroll = Instance.new("ScrollingFrame", frame)
-scroll.Size = UDim2.new(1, -20, 1, -55)
-scroll.Position = UDim2.new(0, 10, 0, 50)
-scroll.CanvasSize = UDim2.new(0,0,0,0)
-scroll.ScrollBarThickness = 8
-scroll.BackgroundTransparency = 1
-
-local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0,7)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local refresh = Instance.new("TextButton", frame)
-refresh.Size = UDim2.new(0, 120, 0, 40)
-refresh.Position = UDim2.new(1, -130, 0, 5)
-refresh.Text = "Refresh"
-refresh.BackgroundColor3 = Color3.fromRGB(0,120,0)
-refresh.TextColor3 = Color3.fromRGB(255,255,255)
-refresh.TextScaled = true
-
-local function loadServers()
-    scroll:ClearAllChildren()
-
-    local ok, data = pcall(function()
-        local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
-        return HttpService:JSONDecode(game:HttpGet(url))
-    end)
-
-    if not ok then return end
-
-    for i, server in ipairs(data.data) do
-        local psCount = 0
-
-        -- Detect PS/Xbox players
-        if server.platforms then
-            for _, plat in pairs(server.platforms) do
-                if plat == "Xbox" or plat == "PS4" or plat == "PS5" then
-                    psCount += 1
-                end
-            end
-        end
-
-        -- Button
-        local btn = Instance.new("TextButton", scroll)
-        btn.Size = UDim2.new(1, -10, 0, 55)
-        btn.BackgroundColor3 = psCount > 0 and Color3.fromRGB(200,50,50) or Color3.fromRGB(50,200,50)
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.TextScaled = true
-
-        local text = "Server "..i.." | Players: "..server.playing.."/"..server.maxPlayers
-        if psCount > 0 then
-            text = text.." | PS: "..psCount
-        end
-        btn.Text = text
-
-        btn.MouseButton1Click:Connect(function()
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer)
-        end)
+btn.MouseButton1Click:Connect(function()
+    highJump = not highJump
+    
+    if highJump then
+        humanoid.JumpPower = highJumpPower
+        btn.Text = "High Jump ON"
+        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    else
+        humanoid.JumpPower = jumpPowerDefault
+        btn.Text = "High Jump OFF"
+        btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
     end
-end
+end)
 
-refresh.MouseButton1Click:Connect(loadServers)
-loadServers()
+-- يرجع القوة الأصلية إذا مت
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    humanoid = newChar:WaitForChild("Humanoid")
+    if not highJump then
+        humanoid.JumpPower = jumpPowerDefault
+    else
+        humanoid.JumpPower = highJumpPower
+    end
+end)
