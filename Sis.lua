@@ -84,6 +84,7 @@ local espEnabled = false
 local espObjects = {}
 local tracerLines = {}
 
+-- Function to add ESP + Tracer
 local function addESP(character)
     if not character:FindFirstChild("Head") then return end
 
@@ -95,12 +96,13 @@ local function addESP(character)
     h.Parent = character
     espObjects[character] = h
 
-    -- Tracer
-    local cam = workspace.CurrentCamera
-    local line = Drawing.new("Line")
+    -- Tracer (GUI Frame)
+    local line = Instance.new("Frame", gui)
+    line.BackgroundColor3 = Color3.fromRGB(0,255,0)
+    line.BorderSizePixel = 0
+    line.AnchorPoint = Vector2.new(0.5, 0)
+    line.Size = UDim2.new(0, 2, 0, 0)
     line.Visible = true
-    line.Color = Color3.fromRGB(0,255,0)
-    line.Thickness = 2
     tracerLines[character] = line
 end
 
@@ -110,7 +112,7 @@ local function removeESP(character)
         espObjects[character] = nil
     end
     if tracerLines[character] then
-        tracerLines[character]:Remove()
+        tracerLines[character]:Destroy()
         tracerLines[character] = nil
     end
 end
@@ -128,22 +130,7 @@ local function toggleESP(state)
     end
 end
 
--- تحديث خطوط التتبع كل فريم
-game:GetService("RunService").RenderStepped:Connect(function()
-    if espEnabled then
-        local cam = workspace.CurrentCamera
-        local screenPos = cam.CFrame.Position
-        for char, line in pairs(tracerLines) do
-            if char and char:FindFirstChild("Head") then
-                local headPos, onScreen = cam:WorldToViewportPoint(char.Head.Position)
-                line.From = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y)
-                line.To = Vector2.new(headPos.X, headPos.Y)
-                line.Visible = onScreen
-            end
-        end
-    end
-end)
-
+-- Player added
 game.Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function(char)
         task.wait(1)
@@ -151,6 +138,23 @@ game.Players.PlayerAdded:Connect(function(plr)
             addESP(char)
         end
     end)
+end)
+
+-- Update Tracers every frame
+game:GetService("RunService").RenderStepped:Connect(function()
+    if espEnabled then
+        local cam = workspace.CurrentCamera
+        local viewport = cam.ViewportSize
+        for char, line in pairs(tracerLines) do
+            if char and char:FindFirstChild("Head") then
+                local headPos, onScreen = cam:WorldToViewportPoint(char.Head.Position)
+                line.Size = UDim2.new(0, 2, 0, (Vector2.new(headPos.X, headPos.Y) - Vector2.new(viewport.X/2, viewport.Y)).Magnitude)
+                line.Position = UDim2.new(0, viewport.X/2, 0, viewport.Y)
+                line.Rotation = math.deg(math.atan2(headPos.Y - viewport.Y, headPos.X - viewport.X/2))
+                line.Visible = onScreen
+            end
+        end
+    end
 end)
 
 espBtn.MouseButton1Click:Connect(function()
