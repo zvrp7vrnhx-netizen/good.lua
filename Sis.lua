@@ -1,4 +1,4 @@
---== Teleport GUI ==--
+--== Teleport GUI FIXED ==--
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
@@ -20,8 +20,30 @@ tpBtn.Draggable = true
 -- وظيفة الزر
 tpBtn.MouseButton1Click:Connect(function()
     local shop = workspace:FindFirstChild("PRESTIGE")
-    if shop and shop:IsA("BasePart") then
-        hrp.CFrame = shop.CFrame + Vector3.new(0,5,0) -- فوق المتجر 5 وحدات
+    if shop then
+        local targetPart
+        if shop:IsA("BasePart") then
+            targetPart = shop
+        elseif shop:IsA("Model") then
+            -- نستخدم PrimaryPart أو أول Part نجده
+            if shop.PrimaryPart then
+                targetPart = shop.PrimaryPart
+            else
+                for _, v in pairs(shop:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        targetPart = v
+                        break
+                    end
+                end
+            end
+        end
+
+        if targetPart then
+            hrp.CFrame = targetPart.CFrame + Vector3.new(0,5,0) -- فوق المتجر 5 وحدات
+            print("Teleported to PRESTIGE")
+        else
+            warn("⚠ ما لقيت BasePart داخل PRESTIGE")
+        end
     else
         warn("⚠ ما لقيت PRESTIGE في Workspace")
     end
