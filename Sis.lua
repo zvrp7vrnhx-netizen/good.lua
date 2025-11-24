@@ -1,6 +1,7 @@
---== High Jump GUI Fixed ==--
+--== Ultra High Jump GUI ==--
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
@@ -17,21 +18,37 @@ btn.Active = true
 btn.Draggable = true
 
 local highJump = false
-local highJumpPower = 180 -- قوة القفزة العالية
+local highJumpPower = 250 -- قوة القفزة العالية
 local defaultJump = 50 -- القفزة الأصلية
 
-local function setJump(humanoid)
-    if highJump then
-        humanoid.JumpPower = highJumpPower
-    else
-        humanoid.JumpPower = defaultJump
+-- تابع لتغيير JumpPower باستمرار
+local function applyHighJump()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        if highJump then
+            player.Character.Humanoid.JumpPower = highJumpPower
+        else
+            player.Character.Humanoid.JumpPower = defaultJump
+        end
     end
 end
 
-local function onCharacter(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    setJump(humanoid)
-end
+-- تحديث كل إطار لضمان القفزة العالية تعمل دائماً
+RunService.Heartbeat:Connect(applyHighJump)
 
-player.CharacterAdded:Connect(onCharacter)
-if
+-- التعامل مع Respawn
+player.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
+    applyHighJump()
+end)
+
+-- زر التشغيل والإيقاف
+btn.MouseButton1Click:Connect(function()
+    highJump = not highJump
+    if highJump then
+        btn.Text = "High Jump ON"
+        btn.BackgroundColor3 = Color3.fromRGB(0,150,0)
+    else
+        btn.Text = "High Jump OFF"
+        btn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+    end
+end)
