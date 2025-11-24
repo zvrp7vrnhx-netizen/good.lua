@@ -1,52 +1,44 @@
---== Speed Boost GUI ==--
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
+--===== SUPER DASH / BOOST =====--
+local UIS = game:GetService("UserInputService")
+local player = game:GetService("Players").LocalPlayer
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.ResetOnSpawn = false
 
--- زر السرعة
+-- زر التشغيل
 local btn = Instance.new("TextButton", gui)
 btn.Size = UDim2.new(0, 180, 0, 50)
 btn.Position = UDim2.new(0.5, -90, 0.7, 0)
 btn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+btn.Text = "Boost OFF"
 btn.TextColor3 = Color3.fromRGB(255,255,255)
-btn.Text = "Speed OFF"
 btn.TextScaled = true
 btn.Active = true
 btn.Draggable = true
 
-local speedEnabled = false
-local defaultSpeed = 16 -- السرعة الأصلية
-local speedBoost = 50   -- سرعة عالية
+local boostEnabled = false
 
--- تابع لتطبيق السرعة
-local function applySpeed()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        local humanoid = player.Character.Humanoid
-        humanoid.WalkSpeed = speedEnabled and speedBoost or defaultSpeed
-    end
-end
-
--- تحديث كل إطار للتأكد من استمرار السرعة
-RunService.Heartbeat:Connect(applySpeed)
-
--- التعامل مع Respawn
-player.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    applySpeed()
+btn.MouseButton1Click:Connect(function()
+	boostEnabled = not boostEnabled
+	if boostEnabled then
+		btn.Text = "Boost ON"
+		btn.BackgroundColor3 = Color3.fromRGB(0,150,0)
+	else
+		btn.Text = "Boost OFF"
+		btn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+	end
 end)
 
--- زر التشغيل والإيقاف
-btn.MouseButton1Click:Connect(function()
-    speedEnabled = not speedEnabled
-    if speedEnabled then
-        btn.Text = "Speed ON"
-        btn.BackgroundColor3 = Color3.fromRGB(0,150,0)
-    else
-        btn.Text = "Speed OFF"
-        btn.BackgroundColor3 = Color3.fromRGB(150,0,0)
-    end
-    applySpeed()
+-- ====== قوة الدفع ======
+local BOOST_POWER = 80
+
+UIS.InputBegan:Connect(function(key)
+	if boostEnabled and key.KeyCode == Enum.KeyCode.Space then
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local hrp = char.HumanoidRootPart
+			
+			-- دفعة قوية للأعلى + للأمام
+			hrp.Velocity = hrp.CFrame.LookVector * BOOST_POWER + Vector3.new(0, BOOST_POWER * 1.3, 0)
+		end
+	end
 end)
