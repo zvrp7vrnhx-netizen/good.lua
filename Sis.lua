@@ -1,51 +1,28 @@
--- FULL GOD MODE + DAMAGE BLOCKER
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LP = Players.LocalPlayer
+--== Teleport GUI ==--
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.ResetOnSpawn = false
 
-local function protectChar(char)
-    local hum = char:WaitForChild("Humanoid")
-    local hrp = char:WaitForChild("HumanoidRootPart")
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
 
-    -- 1) منع نقص الدم نهائياً
-    hum.Health = hum.MaxHealth
-    hum:GetPropertyChangedSignal("Health"):Connect(function()
-        hum.Health = hum.MaxHealth
-    end)
+-- زر التلبورت
+local tpBtn = Instance.new("TextButton", gui)
+tpBtn.Size = UDim2.new(0,150,0,50)
+tpBtn.Position = UDim2.new(0.5,-75,0.5,-25)
+tpBtn.Text = "Go to PRESTIGE"
+tpBtn.TextScaled = true
+tpBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+tpBtn.TextColor3 = Color3.fromRGB(255,255,255)
+tpBtn.Active = true
+tpBtn.Draggable = true
 
-    -- 2) حذف أي أداة تسبب دمج لمن تلمسك
-    char.DescendantAdded:Connect(function(part)
-        if part:IsA("TouchTransmitter") or part:IsA("BasePart") then
-            part.CanTouch = false
-            pcall(function()
-                part.Touched:Connect(function() end)
-            end)
-        end
-    end)
-
-    -- 3) منع أي سكربت Damage من التأثير عليك
-    for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("Script") or v:IsA("LocalScript") then
-            pcall(function()
-                v.Disabled = true
-            end)
-        end
+-- وظيفة الزر
+tpBtn.MouseButton1Click:Connect(function()
+    local shop = workspace:FindFirstChild("PRESTIGE")
+    if shop and shop:IsA("BasePart") then
+        hrp.CFrame = shop.CFrame + Vector3.new(0,5,0) -- فوق المتجر 5 وحدات
+    else
+        warn("⚠ ما لقيت PRESTIGE في Workspace")
     end
-
-    -- 4) تنظيف الدمج المستقبلي كل ثانية
-    task.spawn(function()
-        while char.Parent do
-            hum.Health = hum.MaxHealth
-            hum.MaxHealth = hum.MaxHealth
-            task.wait(0.1)
-        end
-    end)
-end
-
--- حماية عند الرسبنة
-LP.CharacterAdded:Connect(protectChar)
-
--- حماية للشخصية الحالية
-if LP.Character then
-    protectChar(LP.Character)
-end
+end)
